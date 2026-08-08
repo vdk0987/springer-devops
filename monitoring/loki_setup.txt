@@ -1,0 +1,55 @@
+1. Loki Installation
+
+Loki was run locally using Docker.
+
+The Loki configuration file was downloaded using:
+
+curl -L \
+  https://raw.githubusercontent.com/grafana/loki/v3.7.0/cmd/loki/loki-local-config.yaml \
+  -o loki-config.yaml
+
+Loki was started using:
+
+docker run \
+  --name loki \
+  -d \
+  -v "$(pwd):/mnt/config" \
+  -p 3100:3100 \
+  grafana/loki:3.7.0 \
+  -config.file=/mnt/config/loki-config.yaml
+
+
+2. Verify Loki
+Loki readiness was checked using:
+curl http://localhost:3100/ready
+
+Expected output:
+ready
+
+
+3. Docker Log Forwarding
+The Loki Docker logging driver was installed using:
+
+docker plugin install grafana/loki-docker-driver:3.7.0-amd64 \
+  --alias loki \
+  --grant-all-permissions
+
+
+4. Test Log Forwarding
+A Docker container was started with:
+
+docker run --rm \
+  --add-host=host.docker.internal:host-gateway \
+  --log-driver=loki \
+  --log-opt loki-url="http://host.docker.internal:3100/loki/api/v1/push" \
+  alpine:latest \
+  sh -c 'echo "Hello from Loki"; sleep 2'
+
+
+5. Viewing Logs
+
+Loki exposes its HTTP API on:
+http://localhost:3100
+
+The labels endpoint can be queried using:
+curl http://localhost:3100/loki/api/v1/labels
